@@ -49,7 +49,27 @@
       <a-layout-content
           :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
       >
-        Content
+        <a-list item-layout="vertical" size="large" :grid="{ gutter: 16, column: 3 }"
+                :data-source="eEbookList">
+          <template #renderItem="{ item }">
+            <a-list-item key="item.name">
+              <template #actions>
+                <span v-for="{ type, text } in actions" :key="type">
+                  <component :is="type" style="margin-right: 8px"/>
+                  {{ text }}
+                </span>
+              </template>
+              <a-list-item-meta :description="item.description">
+                <template #title>
+                  <a :href="item.href">{{ item.name }}</a>
+                </template>
+                <template #avatar>
+                  <a-avatar :src="item.cover"/>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
       </a-layout-content>
     </a-layout>
   </a-layout>
@@ -57,15 +77,48 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
-import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons-vue';
+import axios from 'axios';
+import {defineComponent, onMounted, ref} from 'vue';
+import {
+  UserOutlined,
+  LaptopOutlined,
+  NotificationOutlined,
+  StarOutlined,
+  LikeOutlined,
+  MessageOutlined
+} from '@ant-design/icons-vue';
 
 export default defineComponent({
   name: 'Home',
   components: {
     UserOutlined,
     LaptopOutlined,
-    NotificationOutlined
+    NotificationOutlined,
+    StarOutlined,
+    LikeOutlined,
+    MessageOutlined
   },
+  setup() {
+    // 书籍列表
+    const eEbookList = ref();
+    // StarOutlined：收藏数，LikeOutlined：点赞数，MessageOutlined：留言数
+    const actions: Record<string, string>[] = [
+      {type: 'StarOutlined', text: '156'},
+      {type: 'LikeOutlined', text: '156'},
+      {type: 'MessageOutlined', text: '2'},
+    ];
+    onMounted(() => {
+      console.log('onMounted');
+      axios.get("http://localhost:8848/ebook/list").then((res) => {
+        const data = res.data;
+        eEbookList.value = data.content;
+      })
+    })
+
+    return {
+      eEbookList,
+      actions
+    }
+  }
 });
 </script>

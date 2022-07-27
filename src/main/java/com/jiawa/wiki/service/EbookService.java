@@ -10,6 +10,7 @@ import com.jiawa.wiki.util.CopyUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,12 @@ public class EbookService {
         // 这两行是固定写法
         EbookExample ebookExample = new EbookExample();
         EbookExample.Criteria criteria = ebookExample.createCriteria();
-        // 根据图书名称模糊查询
-        criteria.andNameLike("%" + req.getName() + "%");
+
+        // 当图书名称不为空时，才进行模糊查询，否则查询全部
+        if (!ObjectUtils.isEmpty(req.getName())) {
+            // 根据图书名称模糊查询
+            criteria.andNameLike("%" + req.getName() + "%");
+        }
         // 返回查询的 ebook 集合
         List<Ebook> ebookList = ebookMapper.selectByExample(ebookExample);
 
