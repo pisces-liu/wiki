@@ -108,7 +108,6 @@ export default defineComponent({
       {type: 'MessageOutlined', text: '2'},
     ];
     onMounted(() => {
-      console.log('onMounted');
       axios.get("/ebook/list").then((res) => {
         const data = res.data;
         eEbookList.value = data.content;
