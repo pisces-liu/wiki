@@ -110,7 +110,7 @@ export default defineComponent({
     onMounted(() => {
       axios.get("/ebook/list").then((res) => {
         const data = res.data;
-        eEbookList.value = data.content;
+        eEbookList.value = data.content.list;
       })
     })
 
