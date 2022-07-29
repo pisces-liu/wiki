@@ -49,11 +49,11 @@
       <a-form-item label="分类一">
         <a-input v-model:value="ebook.category1Id"/>
       </a-form-item>
-      <a-form-item label="分类一">
+      <a-form-item label="分类二">
         <a-input v-model:value="ebook.category2Id"/>
       </a-form-item>
       <a-form-item label="描述">
-        <a-input v-model:value="ebook.desc" type="text"/>
+        <a-input v-model:value="ebook.description" type="text"/>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -146,7 +146,7 @@ export default defineComponent({
     /**
      * 表单
      * */
-    // 模态框是否可见
+        // 模态框是否可见
     const modelVisible = ref(false);
     // 模态框是否处于加载状态
     const modelLoading = ref(false);
@@ -155,10 +155,20 @@ export default defineComponent({
 
     const handleModelOk = () => {
       modelLoading.value = true;
-      setTimeout(() => {
-        modelVisible.value = false;
-        modelLoading.value = false;
-      }, 2000);
+      axios.post("/ebook/save", ebook.value).then((res) => {
+        const data = res.data; // data = commonResp 在这里用以判断是否有值
+        if (data.success) {
+          // 当 data 有值的时候再去修改 model 框的属性
+          modelVisible.value = false;
+          modelLoading.value = false;
+
+          // 重新加载列表
+          handleQuery({
+            page: 1,
+            size: pagination.value.pageSize
+          })
+        }
+      })
     }
     /**
      * 编辑

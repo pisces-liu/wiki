@@ -5,7 +5,8 @@ import com.github.pagehelper.PageInfo;
 import com.jiawa.wiki.domain.Ebook;
 import com.jiawa.wiki.domain.EbookExample;
 import com.jiawa.wiki.mapper.EbookMapper;
-import com.jiawa.wiki.req.EbookReq;
+import com.jiawa.wiki.req.EbookQueryReq;
+import com.jiawa.wiki.req.EbookSaveReq;
 import com.jiawa.wiki.resp.EbookResp;
 import com.jiawa.wiki.resp.PageResp;
 import com.jiawa.wiki.util.CopyUtil;
@@ -22,7 +23,7 @@ public class EbookService {
     @Resource
     private EbookMapper ebookMapper;
 
-    public PageResp<EbookResp> list(EbookReq req) {
+    public PageResp<EbookResp> list(EbookQueryReq req) {
         // 这两行是固定写法
         EbookExample ebookExample = new EbookExample();
         EbookExample.Criteria criteria = ebookExample.createCriteria();
@@ -51,5 +52,23 @@ public class EbookService {
         ebookRespPageResp.setList(ebookResps);
 
         return ebookRespPageResp;
+    }
+
+    /**
+     * 保存或新增电子书操作
+     *
+     * @param ebookSaveReq
+     */
+    public void saveOrUpdate(EbookSaveReq ebookSaveReq) {
+        // 由于 mapper 操作的对象是 Ebook，所以使用 CopyUtil 进行对象拷贝
+        Ebook ebook = CopyUtil.copy(ebookSaveReq, Ebook.class);
+        // 如果 id 为空，则进行增加操作，否则进行修改操作
+        if (ObjectUtils.isEmpty(ebook.getId())) {
+            // 新增
+            ebookMapper.insert(ebook);
+        } else {
+            // 修改
+            ebookMapper.updateByPrimaryKey(ebook);
+        }
     }
 }
