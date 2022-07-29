@@ -20,7 +20,7 @@
         <template v-slot:action="{text, record}">
           <!-- 空格组件 -->
           <a-space size="small">
-            <a-button type="primary" @click="edit">
+            <a-button type="primary" @click="edit(record)">
               编辑
             </a-button>
             <a-button type="danger">
@@ -38,7 +38,24 @@
       title="电子书表单"
       :loading="modelLoading"
       @ok="handleModelOk">
-    <p>Some contents...</p>
+    <!-- 表单 -->
+    <a-form :model="ebook" :label-col="{span:6}" :wrapper-col="wrapperCol">
+      <a-form-item label="封面">
+        <a-input v-model:value="ebook.cover"/>
+      </a-form-item>
+      <a-form-item label="名称">
+        <a-input v-model:value="ebook.name"/>
+      </a-form-item>
+      <a-form-item label="分类一">
+        <a-input v-model:value="ebook.category1Id"/>
+      </a-form-item>
+      <a-form-item label="分类一">
+        <a-input v-model:value="ebook.category2Id"/>
+      </a-form-item>
+      <a-form-item label="描述">
+        <a-input v-model:value="ebook.desc" type="text"/>
+      </a-form-item>
+    </a-form>
   </a-modal>
   <!--对话框 end-->
 </template>
@@ -129,8 +146,13 @@ export default defineComponent({
     /**
      * 表单
      * */
+    // 模态框是否可见
     const modelVisible = ref(false);
+    // 模态框是否处于加载状态
     const modelLoading = ref(false);
+    // 电子书
+    const ebook = ref({})
+
     const handleModelOk = () => {
       modelLoading.value = true;
       setTimeout(() => {
@@ -141,8 +163,9 @@ export default defineComponent({
     /**
      * 编辑
      */
-    const edit = () => {
+    const edit = (record) => {
       modelVisible.value = true;
+      ebook.value = record
     }
 
     onMounted(() => {
@@ -161,7 +184,8 @@ export default defineComponent({
       modelLoading,
       modelVisible,
       handleModelOk,
-      edit
+      edit,
+      ebook
     }
 
   }
