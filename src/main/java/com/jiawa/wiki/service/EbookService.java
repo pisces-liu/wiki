@@ -1,5 +1,7 @@
 package com.jiawa.wiki.service;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.jiawa.wiki.domain.Ebook;
 import com.jiawa.wiki.domain.EbookExample;
 import com.jiawa.wiki.mapper.EbookMapper;
@@ -12,13 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class EbookService {
 
-    @Autowired
+    @Resource
     private EbookMapper ebookMapper;
 
     public List<EbookResp> list(EbookReq req) {
@@ -31,8 +34,16 @@ public class EbookService {
             // 根据图书名称模糊查询
             criteria.andNameLike("%" + req.getName() + "%");
         }
+
+        // 开启分页
+        PageHelper.startPage(1, 3);
+
         // 返回查询的 ebook 集合
         List<Ebook> ebookList = ebookMapper.selectByExample(ebookExample);
+
+        PageInfo<Ebook> pageInfo = new PageInfo<>(ebookList);
+        System.out.println("pageInfo.getTotal() = " + pageInfo.getTotal());
+        System.out.println("pageInfo.getPageNum() = " + pageInfo.getPageNum());
 
         ArrayList<EbookResp> respList = new ArrayList<>();
 
