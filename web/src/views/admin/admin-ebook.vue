@@ -20,7 +20,7 @@
         <template v-slot:action="{text, record}">
           <!-- 空格组件 -->
           <a-space size="small">
-            <a-button type="primary">
+            <a-button type="primary" @click="edit">
               编辑
             </a-button>
             <a-button type="danger">
@@ -31,6 +31,16 @@
       </a-table>
     </a-layout-content>
   </a-layout>
+
+  <!--对话框-->
+  <a-modal
+      v-model:visible="modelVisible"
+      title="电子书表单"
+      :loading="modelLoading"
+      @ok="handleModelOk">
+    <p>Some contents...</p>
+  </a-modal>
+  <!--对话框 end-->
 </template>
 
 <script>
@@ -116,6 +126,24 @@ export default defineComponent({
         size: pagination.pageSize
       });
     };
+    /**
+     * 表单
+     * */
+    const modelVisible = ref(false);
+    const modelLoading = ref(false);
+    const handleModelOk = () => {
+      modelLoading.value = true;
+      setTimeout(() => {
+        modelVisible.value = false;
+        modelLoading.value = false;
+      }, 2000);
+    }
+    /**
+     * 编辑
+     */
+    const edit = () => {
+      modelVisible.value = true;
+    }
 
     onMounted(() => {
       handleQuery({
@@ -129,7 +157,11 @@ export default defineComponent({
       pagination,
       columns,
       loading,
-      handleTableChange
+      handleTableChange,
+      modelLoading,
+      modelVisible,
+      handleModelOk,
+      edit
     }
 
   }
