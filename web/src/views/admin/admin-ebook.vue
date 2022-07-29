@@ -3,7 +3,13 @@
     <a-layout-content
         :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
     >
-
+      <!-- 添加新增按钮 -->
+      <p>
+        <a-button type="primary" @click="add()" size="large">
+          新增
+        </a-button>
+      </p>
+      <!-- 添加新增按钮 end -->
       <a-table
           :columns="columns"
           :row-key="record => record.id"
@@ -164,7 +170,7 @@ export default defineComponent({
 
           // 重新加载列表
           handleQuery({
-            page: 1,
+            page: pagination.value.current,
             size: pagination.value.pageSize
           })
         }
@@ -176,6 +182,13 @@ export default defineComponent({
     const edit = (record) => {
       modelVisible.value = true;
       ebook.value = record
+    }
+    /**
+     * 保存
+     */
+    const add = () => {
+      modelVisible.value = true;
+      ebook.value = {}
     }
 
     onMounted(() => {
@@ -193,9 +206,10 @@ export default defineComponent({
       handleTableChange,
       modelLoading,
       modelVisible,
-      handleModelOk,
       edit,
-      ebook
+      add,
+      ebook,
+      handleModelOk
     }
 
   }
@@ -203,5 +217,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
+img {
+  width: 100px;
+}
 </style>
