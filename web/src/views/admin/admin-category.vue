@@ -56,7 +56,16 @@
         <a-input v-model:value="category.name"/>
       </a-form-item>
       <a-form-item label="父分类">
-        <a-input v-model:value="category.parent"/>
+        <a-select v-model:value="category.parent" ref="select">
+          <!-- 当值是 0 时，代表这个类是父分类 -->
+          <a-select-option value="0">
+            无
+          </a-select-option>
+          <!-- :disable="category.id===c.id" 父分类不能选择父分类。所以隐藏 -->
+          <a-select-option v-for="c in level1" :key="c.id" :value="c.id" :disable="category.id===c.id">
+            {{ c.name }}
+          </a-select-option>
+        </a-select>
       </a-form-item>
       <a-form-item label="顺序">
         <a-input v-model:value="category.sort"/>
