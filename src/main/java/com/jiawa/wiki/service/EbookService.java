@@ -38,6 +38,11 @@ public class EbookService {
             criteria.andNameLike("%" + req.getName() + "%");
         }
 
+        // 根据分类名称进行查询
+        if (!ObjectUtils.isEmpty(req.getCategory2Id())) {
+            criteria.andCategory2IdEqualTo(req.getCategory2Id());
+        }
+
         // 开启分页
         PageHelper.startPage(req.getPage(), req.getSize());
 

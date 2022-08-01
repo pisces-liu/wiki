@@ -6,13 +6,12 @@
           v-model:openKeys="openKeys"
           mode="inline"
           :style="{ height: '100%', borderRight: 0 }"
+          @click="handleClick"
       >
         <!--显示欢迎导航-->
         <a-menu-item key="WelCome">
-          <router-link :to="'/'">
-            <MailOutlined/>
-            <span>欢迎</span>
-          </router-link>
+          <MailOutlined/>
+          <span>欢迎</span>
         </a-menu-item>
         <!--分类导航-->
         <a-sub-menu v-for="item in level1" :key="item.id">
@@ -22,7 +21,8 @@
                 {{ item.name }}
               </span>
           </template>
-          <a-menu-item v-for="child in item.children" :key="child.id">
+          <a-menu-item v-for="child in item.children" :key="child.id"
+          >
               <span>
                 <user-outlined/>
                 {{ child.name }}
@@ -36,7 +36,13 @@
       <a-layout-content
           :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
       >
-        <a-list item-layout="vertical" size="large" :grid="{ gutter: 16, column: 3 }"
+
+        <div class="welcome" v-show="isShowWelcome">
+          <h1>欢迎</h1>
+        </div>
+
+        <!-- 网站主内容 -->
+        <a-list v-show="!isShowWelcome" item-layout="vertical" size="large" :grid="{ gutter: 16, column: 3 }"
                 :data-source="eEbookList">
           <template #renderItem="{ item }">
             <a-list-item key="item.name">
@@ -94,6 +100,10 @@ export default defineComponent({
     const eEbookList = ref();
     // 分类列表
     const level1 = ref();
+    // 分类名称
+    let category2Id = 0;
+    // 显示欢迎内容
+    const isShowWelcome = ref(true)
 
     // StarOutlined：收藏数，LikeOutlined：点赞数，MessageOutlined：留言数
     const actions: Record<string, string>[] = [
@@ -114,33 +124,51 @@ export default defineComponent({
           const categorys = data.content;
           level1.value = [];
           level1.value = Tool.array2Tree(categorys, 0);
-          console.log("树形结构：");
-          console.log(level1.value)
         } else {
           // message.info(data.message);
         }
       });
     };
 
+    const handleClick = (e: any) => {
+      if (e.key === "welcome") {
+        isShowWelcome.value = true;
+      } else {
+        isShowWelcome.value = false;
+        category2Id = e.key;
+        getEbookList();
+      }
+
+    };
+
     // 获取电子书数据
     const getEbookList = () => {
-      axios.get("/ebook/list").then((res) => {
+      axios.get("/ebook/list", {
+        params: {
+          page: 1,
+          size: 100,
+          category2Id: category2Id
+        }
+      }).then((res) => {
         const data = res.data;
-        eEbookList.value = data.content.list;
+        if (data.success) {
+          eEbookList.value = data.content.list;
+        }
       })
-    }
+    };
 
 
     onMounted(() => {
       getCategoryList();
-      getEbookList();
     });
 
 
     return {
       eEbookList,
       actions,
-      level1
+      level1,
+      handleClick,
+      isShowWelcome
     }
   }
 });
