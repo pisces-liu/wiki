@@ -7,42 +7,29 @@
           mode="inline"
           :style="{ height: '100%', borderRight: 0 }"
       >
-        <a-sub-menu key="sub1">
-          <template #title>
+        <!--显示欢迎导航-->
+        <a-menu-item key="WelCome">
+          <router-link :to="'/'">
+            <MailOutlined/>
+            <span>欢迎</span>
+          </router-link>
+        </a-menu-item>
+        <!--分类导航-->
+        <a-sub-menu v-for="item in level1" :key="item.id">
+          <template v-slot:title>
               <span>
                 <user-outlined/>
-                subnav 111111
+                {{ item.name }}
               </span>
           </template>
-          <a-menu-item key="1">option1</a-menu-item>
-          <a-menu-item key="2">option2</a-menu-item>
-          <a-menu-item key="3">option3</a-menu-item>
-          <a-menu-item key="4">option4</a-menu-item>
-        </a-sub-menu>
-        <a-sub-menu key="sub2">
-          <template #title>
+          <a-menu-item v-for="child in item.children" :key="child.id">
               <span>
-                <laptop-outlined/>
-                subnav 2
+                <user-outlined/>
+                {{ child.name }}
               </span>
-          </template>
-          <a-menu-item key="5">option5</a-menu-item>
-          <a-menu-item key="6">option6</a-menu-item>
-          <a-menu-item key="7">option7</a-menu-item>
-          <a-menu-item key="8">option8</a-menu-item>
+          </a-menu-item>
         </a-sub-menu>
-        <a-sub-menu key="sub3">
-          <template #title>
-              <span>
-                <notification-outlined/>
-                subnav 3
-              </span>
-          </template>
-          <a-menu-item key="9">option9</a-menu-item>
-          <a-menu-item key="10">option10</a-menu-item>
-          <a-menu-item key="11">option11</a-menu-item>
-          <a-menu-item key="12">option12</a-menu-item>
-        </a-sub-menu>
+        <!--分类导航 end-->
       </a-menu>
     </a-layout-sider>
     <a-layout style="padding: 0 24px 24px">
@@ -85,8 +72,11 @@ import {
   NotificationOutlined,
   StarOutlined,
   LikeOutlined,
-  MessageOutlined
+  MessageOutlined,
+  MailOutlined
 } from '@ant-design/icons-vue';
+import {message} from "ant-design-vue";
+import {Tool} from "@/util/tool";
 
 export default defineComponent({
   name: 'Home',
@@ -96,27 +86,61 @@ export default defineComponent({
     NotificationOutlined,
     StarOutlined,
     LikeOutlined,
-    MessageOutlined
+    MessageOutlined,
+    MailOutlined
   },
   setup() {
     // 书籍列表
     const eEbookList = ref();
+    // 分类列表
+    const level1 = ref();
+
     // StarOutlined：收藏数，LikeOutlined：点赞数，MessageOutlined：留言数
     const actions: Record<string, string>[] = [
       {type: 'StarOutlined', text: '156'},
       {type: 'LikeOutlined', text: '156'},
       {type: 'MessageOutlined', text: '2'},
     ];
-    onMounted(() => {
+
+
+    // 获取分类数据
+    const getCategoryList = () => {
+      // 当加载数据时，打开 loading 状态
+      axios.get("/category/all").then((res) => {
+        // 获取返回值数据
+        const data = res.data;
+        // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
+        if (data.success) {
+          const categorys = data.content;
+          level1.value = [];
+          level1.value = Tool.array2Tree(categorys, 0);
+          console.log("树形结构：");
+          console.log(level1.value)
+        } else {
+          // message.info(data.message);
+        }
+      });
+    };
+
+    // 获取电子书数据
+    const getEbookList = () => {
       axios.get("/ebook/list").then((res) => {
         const data = res.data;
         eEbookList.value = data.content.list;
       })
-    })
+    }
+
+
+    onMounted(() => {
+      getCategoryList();
+      getEbookList();
+    });
+
 
     return {
       eEbookList,
-      actions
+      actions,
+      level1
     }
   }
 });
