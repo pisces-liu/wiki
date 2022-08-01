@@ -39,6 +39,11 @@
         <template #cover="{text: cover}">
           <img v-if="cover" :src="cover" alt="avatar">
         </template>
+        <!-- 级联分类 -->
+        <template v-slot:category="{text,record}">
+          <span>{{ getCategoryName(record.category1Id) }}/{{ getCategoryName(record.category2Id) }}</span>
+        </template>
+
         <!-- 编辑按钮       -->
         <template v-slot:action="{text, record}">
           <!-- 空格组件 -->
@@ -76,11 +81,11 @@
       <a-form-item label="名称">
         <a-input v-model:value="ebook.name"/>
       </a-form-item>
-      <a-form-item label="分类一">
-        <a-input v-model:value="ebook.category1Id"/>
-      </a-form-item>
-      <a-form-item label="分类二">
-        <a-input v-model:value="ebook.category2Id"/>
+      <a-form-item label="分类">
+        <a-cascader
+            v-model:value="categoryIds"
+            :field-names="{ label:'name',value:'id',children:'children'}"
+            :options="level1"/>
       </a-form-item>
       <a-form-item label="描述">
         <a-input v-model:value="ebook.description" type="text"/>
@@ -90,7 +95,7 @@
   <!--对话框 end-->
 </template>
 
-<script>
+<script lang="ts">
 import {defineComponent, onMounted, ref} from "vue";
 import axios from "axios";
 import message from 'ant-design-vue'
@@ -102,6 +107,10 @@ export default defineComponent({
     // 查询电子书参数：param
     const param = ref();
     param.value = {};
+    /*
+* 数组：[100, 101] 对应：前端开发/Vue
+* */
+    const categoryIds = ref();
 
     const ebooks = ref();
     const pagination = ref({
@@ -121,15 +130,10 @@ export default defineComponent({
         dataIndex: 'name'
       },
       {
-        title: '分类一',
-        key: 'category1Id',
-        dataIndex: 'category1Id'
+        title: '分类',
+        slots: {customRender: 'category'}
       },
       {
-        title: '分类二',
-        key: 'category2Id',
-        dataIndex: 'category2Id'
-      }, {
         title: '文档数',
         dataIndex: 'docCount'
       }, {
@@ -146,6 +150,43 @@ export default defineComponent({
         }
       }
     ];
+
+    const level1 = ref();
+    let categorys;
+
+    /*
+    * 分类数据查询
+    * */
+    const handleQueryCategory = () => {
+      // 当加载数据时，打开 loading 状态
+      loading.value = true;
+      axios.get("/category/all").then((res) => {
+        // 当有返回值时，关闭 loading 状态
+        loading.value = false;
+        // 获取返回值数据
+        const data = res.data;
+        // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
+        if (data.success) {
+          categorys = data.content;
+          level1.value = [];
+          level1.value = Tool.array2Tree(categorys, 0);
+          console.log("树形结构：");
+          console.log(level1.value)
+        } else {
+          // message.info(data.message);
+        }
+      });
+    };
+
+    const getCategoryName = (cid: number) => {
+      let result = "";
+      categorys.forEach((item: any) => {
+        if (item.id === cid) {
+          result = item.name;
+        }
+      });
+      return result;
+    }
 
     /*
     * 数据查询
@@ -196,6 +237,9 @@ export default defineComponent({
     /**
      * 表单
      * */
+
+
+
         // 模态框是否可见
     const modelVisible = ref(false);
     // 模态框是否处于加载状态
@@ -205,6 +249,10 @@ export default defineComponent({
 
     const handleModelOk = () => {
       modelLoading.value = true;
+      // 准备 级联 数据
+
+      ebook.value.category1Id = categoryIds.value[0];
+      ebook.value.category2Id = categoryIds.value[1];
       axios.post("/ebook/save", ebook.value).then((res) => {
 
         modelLoading.value = false;
@@ -228,9 +276,11 @@ export default defineComponent({
     /**
      * 编辑
      */
-    const edit = (record) => {
+    const edit = (record: any) => {
       modelVisible.value = true;
       ebook.value = Tool.copy(record);
+      // 准备 级联 数据
+      categoryIds.value = [ebook.value.category1Id, ebook.value.category2Id];
     }
     /**
      * 保存
@@ -256,7 +306,10 @@ export default defineComponent({
       })
     }
 
+
     onMounted(() => {
+      // 调用获取分类数据方法
+      handleQueryCategory();
       handleQuery({
         page: 1,
         size: pagination.value.pageSize
@@ -279,7 +332,10 @@ export default defineComponent({
       // 电子书查询数据
       param,
       // 查询方法
-      handleQuery
+      handleQuery,
+      categoryIds,
+      level1,
+      getCategoryName
     }
 
   }
