@@ -3,11 +3,28 @@
     <a-layout-content
         :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
     >
-      <!-- 添加新增按钮 -->
       <p>
-        <a-button type="primary" @click="add()" size="large">
-          新增
-        </a-button>
+        <!-- 添加根据名称查询电子书功能 start-->
+        <a-form layout="inline" :model="param">
+          <a-form-item>
+            <a-input v-model:value="param.name" placeholder="名称"></a-input>
+          </a-form-item>
+          <a-form-item>
+            <a-button type="primary" @click="handleQuery({page:1,size:pagination.pageSize})">
+              查询
+            </a-button>
+          </a-form-item>
+          <a-form-item>
+            <!-- 添加新增按钮 start-->
+            <a-button type="primary" @click="add()">
+              新增图书
+            </a-button>
+          </a-form-item>
+
+        </a-form>
+        <!-- 添加根据名称查询电子书功能 end-->
+
+
       </p>
       <!-- 添加新增按钮 end -->
       <a-table
@@ -29,9 +46,16 @@
             <a-button type="primary" @click="edit(record)">
               编辑
             </a-button>
-            <a-button type="danger">
-              删除
-            </a-button>
+            <a-popconfirm
+                title="删除后不可恢复，确定删除？"
+                ok-text="是"
+                cancel-text="否"
+                @confirm="handleDelete(record.id)"
+            >
+              <a-button type="danger">
+                删除
+              </a-button>
+            </a-popconfirm>
           </a-space>
         </template>
       </a-table>
@@ -69,14 +93,20 @@
 <script>
 import {defineComponent, onMounted, ref} from "vue";
 import axios from "axios";
+import message from 'ant-design-vue'
+import {Tool} from '@/util/tool'
 
 export default defineComponent({
   name: "Admin-eBook",
   setup() {
+    // 查询电子书参数：param
+    const param = ref();
+    param.value = {};
+
     const ebooks = ref();
     const pagination = ref({
       current: 1,
-      pageSize: 5,
+      pageSize: 10,
       total: 0
     });
     const loading = ref(false);
@@ -121,20 +151,34 @@ export default defineComponent({
     * 数据查询
     * */
     const handleQuery = (params) => {
+      // 当加载数据时，打开 loading 状态
       loading.value = true;
       axios.get("/ebook/list", {
+        // axios 拼接请求参数，参数为分页信息
         params: {
           page: params.page,
-          size: params.size
+          size: params.size,
+          name: param.value.name
         }
       }).then((res) => {
+        // 当有返回值时，关闭 loading 状态
         loading.value = false;
+        // 获取返回值数据
         const data = res.data;
-        ebooks.value = data.content.list;
+        // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
+        if (data.success) {
 
-        // 重置分页按钮
-        pagination.value.current = params.page;
-        pagination.value.total = data.content.total;
+          ebooks.value = data.content.list;
+          // 重置分页按钮
+          pagination.value.current = params.page;
+          pagination.value.total = data.content.total;
+
+          // 重置 查询参数
+          param.value = {};
+        } else {
+          // 通过 ant 组件，提示错误信息
+          // message.info(data.message);
+        }
       });
     };
 
@@ -162,6 +206,8 @@ export default defineComponent({
     const handleModelOk = () => {
       modelLoading.value = true;
       axios.post("/ebook/save", ebook.value).then((res) => {
+
+        modelLoading.value = false;
         const data = res.data; // data = commonResp 在这里用以判断是否有值
         if (data.success) {
           // 当 data 有值的时候再去修改 model 框的属性
@@ -173,6 +219,9 @@ export default defineComponent({
             page: pagination.value.current,
             size: pagination.value.pageSize
           })
+        } else {
+          // 提醒错误信息
+          message.error(data.message)
         }
       })
     }
@@ -181,7 +230,7 @@ export default defineComponent({
      */
     const edit = (record) => {
       modelVisible.value = true;
-      ebook.value = record
+      ebook.value = Tool.copy(record);
     }
     /**
      * 保存
@@ -189,6 +238,22 @@ export default defineComponent({
     const add = () => {
       modelVisible.value = true;
       ebook.value = {}
+    }
+
+    /**
+     * 删除
+     */
+    const handleDelete = (id) => {
+      axios.delete("/ebook/delete/" + id).then((res) => {
+        const data = res.data;
+        if (data.success) {
+          // 重新加载列表
+          handleQuery({
+            page: pagination.value.current,
+            size: pagination.value.pageSize
+          })
+        }
+      })
     }
 
     onMounted(() => {
@@ -209,7 +274,12 @@ export default defineComponent({
       edit,
       add,
       ebook,
-      handleModelOk
+      handleModelOk,
+      handleDelete,
+      // 电子书查询数据
+      param,
+      // 查询方法
+      handleQuery
     }
 
   }
@@ -218,6 +288,6 @@ export default defineComponent({
 
 <style scoped>
 img {
-  width: 100px;
+  width: 70px;
 }
 </style>

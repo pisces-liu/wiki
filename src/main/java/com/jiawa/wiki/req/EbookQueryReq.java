@@ -5,11 +5,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EbookQueryReq extends PageReq{
+public class EbookQueryReq extends PageReq {
     private Long id;
 
     private String name;
