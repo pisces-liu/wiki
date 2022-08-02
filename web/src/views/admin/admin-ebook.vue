@@ -48,6 +48,12 @@
         <template v-slot:action="{text, record}">
           <!-- 空格组件 -->
           <a-space size="small">
+            <!-- 在路由中，传递电子书 id -->
+            <router-link :to="'/admin/doc?ebookId=' + record.id">
+              <a-button type="primary">
+                文档管理
+              </a-button>
+            </router-link>
             <a-button type="primary" @click="edit(record)">
               编辑
             </a-button>
@@ -143,7 +149,7 @@ export default defineComponent({
         title: '点赞数',
         dataIndex: 'voteCount'
       }, {
-        title: 'Action',
+        title: '管理',
         key: 'action',
         slots: {
           customRender: 'action'
@@ -152,7 +158,7 @@ export default defineComponent({
     ];
 
     const level1 = ref();
-    let categorys;
+    let categorys: any;
 
     /*
     * 分类数据查询
@@ -170,8 +176,6 @@ export default defineComponent({
           categorys = data.content;
           level1.value = [];
           level1.value = Tool.array2Tree(categorys, 0);
-          console.log("树形结构：");
-          console.log(level1.value)
         } else {
           // message.info(data.message);
         }
@@ -191,7 +195,7 @@ export default defineComponent({
     /*
     * 数据查询
     * */
-    const handleQuery = (params) => {
+    const handleQuery = (params: any) => {
       // 当加载数据时，打开 loading 状态
       loading.value = true;
       axios.get("/ebook/list", {
@@ -227,7 +231,7 @@ export default defineComponent({
      * 点击表格页码时触发
      * @param pagination
      */
-    const handleTableChange = (pagination) => {
+    const handleTableChange = (pagination: any) => {
       console.log("分页参数: " + pagination);
       handleQuery({
         page: pagination.current,
@@ -245,7 +249,7 @@ export default defineComponent({
     // 模态框是否处于加载状态
     const modelLoading = ref(false);
     // 电子书
-    const ebook = ref({})
+    const ebook: any = ref({})
 
     const handleModelOk = () => {
       modelLoading.value = true;
@@ -269,7 +273,7 @@ export default defineComponent({
           })
         } else {
           // 提醒错误信息
-          message.error(data.message)
+          // message.error(data.message)
         }
       })
     }
@@ -293,7 +297,7 @@ export default defineComponent({
     /**
      * 删除
      */
-    const handleDelete = (id) => {
+    const handleDelete = (id: any) => {
       axios.delete("/ebook/delete/" + id).then((res) => {
         const data = res.data;
         if (data.success) {
