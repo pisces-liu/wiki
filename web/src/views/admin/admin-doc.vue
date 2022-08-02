@@ -88,6 +88,9 @@ export default defineComponent({
   setup() {
     const route = useRoute()
     const doc = ref();
+    doc.value = {
+      ebookId: route.query.ebookId
+    };
     const docs = ref()
     const loading = ref(false);
 
@@ -130,9 +133,10 @@ export default defineComponent({
      * 编辑
      */
     const edit = (record: any) => {
-      // 清空富文本框
       modelVisible.value = true;
+
       doc.value = Tool.copy(record);
+      console.log(doc.value)
       // 不能选择当前节点及其所有子孙节点，作为父节点，会使树断开
       treeSelectData.value = Tool.copy(level1.value);
       setDisable(treeSelectData.value, record.id);
@@ -167,17 +171,6 @@ export default defineComponent({
       }
     ];
 
-    /*
-    * // 一级分类树，children 属性就是二级分类
-    * [{
-    *   id: "",
-    *   name: "",
-    *   children: [{
-    *       id: "",
-    *       name: "",
-    *    }]
-    * }]
-    * */
     const level1 = ref();
 
     /*
@@ -204,7 +197,7 @@ export default defineComponent({
 
 
     /**
-     * 表单
+     * 点击 表单 ok 时，发送请求
      * */
     const handleModelOk = () => {
       modelLoading.value = true;

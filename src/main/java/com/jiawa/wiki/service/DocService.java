@@ -31,12 +31,15 @@ public class DocService {
     }
 
     public void saveOrUpdate(DocQueryReq req) {
-        Doc Doc = CopyUtil.copy(req, Doc.class);
+        Doc doc = CopyUtil.copy(req, Doc.class);
         if (ObjectUtils.isEmpty(req.getId())) {
-            Doc.setId(snowFlake.nextId());
-            DocMapper.insert(Doc);
+            System.out.println("save: doc.id = " + doc.getId());
+
+            doc.setId(snowFlake.nextId());
+            DocMapper.insert(doc);
         } else {
-            DocMapper.updateByPrimaryKey(Doc);
+            System.out.println("update: doc.id = " + doc.getId());
+            DocMapper.updateByPrimaryKey(doc);
         }
     }
 
