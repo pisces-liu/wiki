@@ -7,6 +7,8 @@ import com.jiawa.wiki.service.DocService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -31,12 +33,19 @@ public class DocController {
         return commonResp;
     }
 
-    @DeleteMapping("/delete/{id}")
+/*    @DeleteMapping("/delete/{id}")
     public CommonResp del(@PathVariable Long id) {
         CommonResp commonResp = new CommonResp();
         docService.delete(id);
         return commonResp;
+    }*/
+
+    @DeleteMapping("/delete/{idsStr}")
+    public CommonResp del(@PathVariable String idsStr) {
+        CommonResp commonResp = new CommonResp();
+
+        List<String> asList = Arrays.asList(idsStr.split(","));
+        docService.delete(asList);
+        return commonResp;
     }
-
-
 }

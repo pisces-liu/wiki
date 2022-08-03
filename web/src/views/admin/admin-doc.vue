@@ -8,7 +8,7 @@
           <a-form-item>
             <!-- 添加新增按钮 start-->
             <a-button type="primary" @click="add()">
-              新增分类
+              新增文档
             </a-button>
           </a-form-item>
         </a-form>
@@ -47,7 +47,7 @@
   <!--对话框-->
   <a-modal
       v-model:visible="modelVisible"
-      title="分类表单"
+      title="文档表单"
       :loading="modelLoading"
       @ok="handleModelOk">
     <!-- 表单 -->
@@ -55,8 +55,8 @@
       <a-form-item label="名称">
         <a-input v-model:value="doc.name"/>
       </a-form-item>
-      <a-form-item label="父分类">
-        <!-- 选择父分类组件 -->
+      <a-form-item label="父文档">
+        <!-- 选择父文档组件 -->
         <a-tree-select
             v-model:value="doc.parent"
             style="width: 100%"
@@ -71,36 +71,53 @@
       <a-form-item label="顺序">
         <a-input v-model:value="doc.sort"/>
       </a-form-item>
+      <a-form-item label="内容">
+        <div style="border: 1px solid #ccc">
+          <Toolbar
+              style="border-bottom: 1px solid #ccc"
+              :editor="editorRef"
+              :defaultConfig="toolbarConfig"
+              :mode="mode"
+          />
+          <Editor
+              style="height: 500px; overflow-y: hidden;"
+              v-model="valueHtml"
+              :defaultConfig="editorConfig"
+              :mode="mode"
+              @onCreated="handleCreated"
+          />
+        </div>
+      </a-form-item>
     </a-form>
   </a-modal>
   <!--对话框 end-->
 </template>
 
 <script lang="ts">
+import '@wangeditor/editor/dist/css/style.css' // 引入 css
+
+import {onBeforeUnmount, shallowRef} from 'vue'
 import {defineComponent, onMounted, ref} from "vue";
 import axios from "axios";
 import message from 'ant-design-vue'
 import {Tool} from '@/util/tool'
 import {useRoute} from "vue-router";
+import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
 
 export default defineComponent({
   name: "Admin-Doc",
+  components: {Editor, Toolbar},
   setup() {
     const route = useRoute()
     const doc = ref();
-    doc.value = {
-      ebookId: route.query.ebookId
-    };
     const docs = ref()
     const loading = ref(false);
 
-    //######################################## 编辑分类相关代码
     // 因为树选择组件的属性状态，会随当前编辑的节点而变化，所以单独声明一个响应式变量
     const treeSelectData = ref();
     treeSelectData.value = [];
-    /**
-     * 将某节点及其子孙节点全部置为disabled
-     */
+
+    // 将某节点及其子孙节点全部置为disabled
     const setDisable = (treeSelectData: any, id: any) => {
       // console.log(treeSelectData, id);
       // 遍历数组，即遍历某一层节点
@@ -129,41 +146,32 @@ export default defineComponent({
       }
     };
 
-    /**
-     * 编辑
-     */
+    // 编辑
     const edit = (record: any) => {
       modelVisible.value = true;
-
       doc.value = Tool.copy(record);
       console.log(doc.value)
-      // 不能选择当前节点及其所有子孙节点，作为父节点，会使树断开
-      treeSelectData.value = Tool.copy(level1.value);
+      treeSelectData.value = Tool.copy(level1.value);// 不能选择当前节点及其所有子孙节点，作为父节点，会使树断开
       setDisable(treeSelectData.value, record.id);
-      // 为选择树添加一个"无"
-      treeSelectData.value.unshift({id: 0, name: '无'});
+      treeSelectData.value.unshift({id: 0, name: '无'});// 为选择树添加一个"无"
     };
-    //######################################## 编辑分类相关代码 end
 
-
-    // 模态框是否可见
-    const modelVisible = ref(false);
-    // 模态框是否处于加载状态
-    const modelLoading = ref(false);
+    const modelVisible = ref(false); // 模态框是否可见
+    const modelLoading = ref(false); // 模态框是否处于加载状态
     const columns = [
       {
         title: '名称',
         dataIndex: 'name'
       },
       {
-        title: '父分类',
+        title: '父文档',
         key: 'parent',
         dataIndex: 'parent'
       }, {
-        title: 'sort',
+        title: '排序',
         dataIndex: 'sort'
       }, {
-        title: 'Action',
+        title: '操作',
         key: 'action',
         slots: {
           customRender: 'action'
@@ -173,17 +181,12 @@ export default defineComponent({
 
     const level1 = ref();
 
-    /*
-    * 数据查询
-    * */
+    // 查询数据
     const handleQuery = () => {
-      // 当加载数据时，打开 loading 状态
-      loading.value = true;
+      loading.value = true; // 当加载数据时，打开 loading 状态
       axios.get("/doc/all").then((res) => {
-        // 当有返回值时，关闭 loading 状态
-        loading.value = false;
-        // 获取返回值数据
-        const data = res.data;
+        loading.value = false;// 当有返回值时，关闭 loading 状态
+        const data = res.data;// 获取返回值数据
         // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
         if (data.success) {
           docs.value = data.content;
@@ -196,57 +199,72 @@ export default defineComponent({
     };
 
 
-    /**
-     * 点击 表单 ok 时，发送请求
-     * */
+    // 发送表单请求
     const handleModelOk = () => {
       modelLoading.value = true;
       axios.post("/doc/save", doc.value).then((res) => {
         modelLoading.value = false;
         const data = res.data; // data = commonResp 在这里用以判断是否有值
         if (data.success) {
-          // 当 data 有值的时候再去修改 model 框的属性
-          modelVisible.value = false;
+          modelVisible.value = false;// 当 data 有值的时候再去修改 model 框的属性
           modelLoading.value = false;
-          // 重新加载列表
-          handleQuery()
+          handleQuery();// 重新加载列表
         } else {
           // 提醒错误信息
-          message.error(data.message)
+          // message.error(data.message)
         }
       })
-    }
+    };
 
-    /**
-     * 新增
-     */
+    // 新增
     const add = () => {
       modelVisible.value = true;
       doc.value = {
         ebookId: route.query.ebookId
       };
-
       treeSelectData.value = Tool.copy(level1.value);
-      // 为选择树添加一个"无"
-      treeSelectData.value.unshift({id: 0, name: '无'});
+      treeSelectData.value.unshift({id: 0, name: '无'}); // 为选择树添加一个"无"
     };
 
-    /**
-     * 删除
-     */
+    // 删除
     const handleDelete = (id: any) => {
       axios.delete("/doc/delete/" + id).then((res) => {
         const data = res.data;
         if (data.success) {
-          // 重新加载列表
           handleQuery()
         }
       })
-    }
+    };
+
+    // 编辑器实例--------------------
+    // 编辑器实例，必须用 shallowRef
+    const editorRef = shallowRef()
+
+    // 内容 HTML
+    const valueHtml = ref('<p>hello</p>')
+
 
     onMounted(() => {
-      handleQuery()
+      handleQuery();
+      setTimeout(() => {
+        valueHtml.value = '<p>模拟 Ajax 异步设置内容</p>'
+      }, 1500);
     });
+
+    const toolbarConfig = {}
+    const editorConfig = { placeholder: '请输入内容...' }
+
+    // 组件销毁时，也及时销毁编辑器
+    onBeforeUnmount(() => {
+      const editor = editorRef.value
+      if (editor == null) return
+      editor.destroy()
+    })
+
+    const handleCreated = (editor:any) => {
+      editorRef.value = editor // 记录 editor 实例，重要！
+    }
+    // 编辑器实例--------------------
 
     return {
       columns,
@@ -257,20 +275,20 @@ export default defineComponent({
       add,
       handleModelOk,
       handleDelete,
-      // 查询方法
-      handleQuery,
-      // 分类信息
-      doc,
+      handleQuery,// 查询方法
+      doc,// 文档信息
       docs,
-      // 文档树数据
-      level1,
+      level1, // 文档树数据
+      treeSelectData,
 
-      treeSelectData
+      // editor
+      editorRef,
+      valueHtml,
+      mode: 'default', // 或 'simple'
+      toolbarConfig,
+      editorConfig,
+      handleCreated
     }
-
   }
 })
 </script>
-
-<style scoped>
-</style>

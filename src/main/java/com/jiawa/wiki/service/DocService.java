@@ -47,5 +47,17 @@ public class DocService {
         DocMapper.deleteByPrimaryKey(id);
     }
 
+    /**
+     * 批量删除 文档
+     *
+     * @param ids
+     */
+    public void delete(List<String> ids) {
+        DocExample docExample = new DocExample();
+        DocExample.Criteria criteria = docExample.createCriteria();
+        criteria.andIdIn(ids);
+        DocMapper.deleteByExample(docExample);
+    }
+
 
 }
