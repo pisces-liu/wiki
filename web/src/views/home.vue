@@ -33,14 +33,10 @@
       </a-menu>
     </a-layout-sider>
     <a-layout style="padding: 0 24px 24px">
-      <a-layout-content
-          :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
-      >
-
+      <a-layout-content :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }">
         <div class="welcome" v-show="isShowWelcome">
           <h1>欢迎</h1>
         </div>
-
         <!-- 网站主内容 -->
         <a-list v-show="!isShowWelcome" item-layout="vertical" size="large" :grid="{ gutter: 16, column: 3 }"
                 :data-source="eEbookList">
@@ -54,7 +50,9 @@
               </template>
               <a-list-item-meta :description="item.description">
                 <template #title>
-                  <a :href="item.href">{{ item.name }}</a>
+                  <router-link :to="'/doc/?ebookId='+ item.id">
+                    {{ item.name }}
+                  </router-link>
                 </template>
                 <template #avatar>
                   <a-avatar :src="item.cover"/>

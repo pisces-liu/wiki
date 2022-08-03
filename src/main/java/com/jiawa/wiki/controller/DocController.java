@@ -26,6 +26,14 @@ public class DocController {
         return commonResp;
     }
 
+    @RequestMapping("/all/{ebookId}")
+    public CommonResp all(@PathVariable Long ebookId) {
+        CommonResp<DocResp> commonResp = new CommonResp<>();
+        DocResp ebook = docService.all(ebookId);
+        commonResp.setContent(ebook);
+        return commonResp;
+    }
+
     @PostMapping("/save")
     public CommonResp save(@RequestBody DocQueryReq req) {
         CommonResp commonResp = new CommonResp();
@@ -47,5 +55,13 @@ public class DocController {
         List<String> asList = Arrays.asList(idsStr.split(","));
         docService.delete(asList);
         return commonResp;
+    }
+
+    @GetMapping("/find-content/{id}")
+    public CommonResp<String> findContent(@PathVariable Long id) {
+        CommonResp<String> resp = new CommonResp<>();
+        String finContent = docService.finContent(id);
+        resp.setContent(finContent);
+        return resp;
     }
 }

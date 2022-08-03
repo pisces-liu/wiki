@@ -1,12 +1,10 @@
 <template>
   <a-layout style="padding: 0 24px 24px">
-    <a-layout-content
-        :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
-    >
+    <a-layout-content :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }">
+      <!-- 添加新增按钮 start-->
       <p>
         <a-form layout="inline">
           <a-form-item>
-            <!-- 添加新增按钮 start-->
             <a-button type="primary" @click="add()">
               新增文档
             </a-button>
@@ -14,6 +12,7 @@
         </a-form>
       </p>
       <!-- 添加新增按钮 end -->
+      <!-- 展示 doc 内容 start-->
       <a-table
           :columns="columns"
           :row-key="record => record.id"
@@ -41,6 +40,8 @@
           </a-space>
         </template>
       </a-table>
+      <!-- 展示 doc 内容 end-->
+
     </a-layout-content>
   </a-layout>
 
@@ -49,8 +50,10 @@
       v-model:visible="modelVisible"
       title="文档表单"
       :loading="modelLoading"
-      @ok="handleModelOk">
-    <!-- 表单 -->
+      @ok="handleModelOk"
+      width="100%"
+  >
+    <!-- 表单 start -->
     <a-form :model="doc" :label-col="{span:6}" :wrapper-col="wrapperCol">
       <a-form-item label="名称">
         <a-input v-model:value="doc.name"/>
@@ -71,6 +74,7 @@
       <a-form-item label="顺序">
         <a-input v-model:value="doc.sort"/>
       </a-form-item>
+      <!-- 富文本内容 -->
       <a-form-item label="内容">
         <div style="border: 1px solid #ccc">
           <Toolbar
@@ -89,6 +93,9 @@
         </div>
       </a-form-item>
     </a-form>
+    <!-- 表单  -->
+
+
   </a-modal>
   <!--对话框 end-->
 </template>
@@ -112,6 +119,11 @@ export default defineComponent({
     const doc = ref();
     const docs = ref()
     const loading = ref(false);
+
+    const editorRef = shallowRef();// 编辑器实例，必须用 shallowRef
+    const valueHtml = ref(); // 内容 HTML
+
+    const level1 = ref(); // 文档树
 
     // 因为树选择组件的属性状态，会随当前编辑的节点而变化，所以单独声明一个响应式变量
     const treeSelectData = ref();
@@ -146,11 +158,25 @@ export default defineComponent({
       }
     };
 
+    // 内容文档查询
+    const handleQueryContent = () => {
+      axios.get("/doc/find-content/" + doc.value.id).then((res) => {
+        const data = res.data;
+        if (data.success) {
+          valueHtml.value = data.content; // 保存内容
+        } else {
+          // message.error(data.message)
+        }
+      })
+    };
+
     // 编辑
     const edit = (record: any) => {
+      valueHtml.value = ''; // 初始化文档内容
       modelVisible.value = true;
       doc.value = Tool.copy(record);
       console.log(doc.value)
+      handleQueryContent(); // 获取文档内容
       treeSelectData.value = Tool.copy(level1.value);// 不能选择当前节点及其所有子孙节点，作为父节点，会使树断开
       setDisable(treeSelectData.value, record.id);
       treeSelectData.value.unshift({id: 0, name: '无'});// 为选择树添加一个"无"
@@ -164,13 +190,6 @@ export default defineComponent({
         dataIndex: 'name'
       },
       {
-        title: '父文档',
-        key: 'parent',
-        dataIndex: 'parent'
-      }, {
-        title: '排序',
-        dataIndex: 'sort'
-      }, {
         title: '操作',
         key: 'action',
         slots: {
@@ -179,7 +198,6 @@ export default defineComponent({
       }
     ];
 
-    const level1 = ref();
 
     // 查询数据
     const handleQuery = () => {
@@ -198,10 +216,10 @@ export default defineComponent({
       });
     };
 
-
     // 发送表单请求
     const handleModelOk = () => {
       modelLoading.value = true;
+      doc.value.content = valueHtml.value; // 获取富文本内容
       axios.post("/doc/save", doc.value).then((res) => {
         modelLoading.value = false;
         const data = res.data; // data = commonResp 在这里用以判断是否有值
@@ -215,6 +233,7 @@ export default defineComponent({
         }
       })
     };
+
 
     // 新增
     const add = () => {
@@ -236,23 +255,15 @@ export default defineComponent({
       })
     };
 
-    // 编辑器实例--------------------
-    // 编辑器实例，必须用 shallowRef
-    const editorRef = shallowRef()
-
-    // 内容 HTML
-    const valueHtml = ref('<p>hello</p>')
-
-
     onMounted(() => {
       handleQuery();
-      setTimeout(() => {
-        valueHtml.value = '<p>模拟 Ajax 异步设置内容</p>'
-      }, 1500);
+      /*      setTimeout(() => {
+              valueHtml.value = doc.value.content
+            }, 1500);*/
     });
 
     const toolbarConfig = {}
-    const editorConfig = { placeholder: '请输入内容...' }
+    const editorConfig = {placeholder: '请输入内容...'}
 
     // 组件销毁时，也及时销毁编辑器
     onBeforeUnmount(() => {
@@ -261,10 +272,9 @@ export default defineComponent({
       editor.destroy()
     })
 
-    const handleCreated = (editor:any) => {
+    const handleCreated = (editor: any) => {
       editorRef.value = editor // 记录 editor 实例，重要！
     }
-    // 编辑器实例--------------------
 
     return {
       columns,

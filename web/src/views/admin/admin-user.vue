@@ -4,10 +4,10 @@
         :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }"
     >
       <p>
-        <!-- 添加根据名称查询电子书功能 start-->
+        <!-- 添加根据名称查询功能 start-->
         <a-form layout="inline" :model="param">
           <a-form-item>
-            <a-input v-model:value="param.name" placeholder="名称"></a-input>
+            <a-input v-model:value="param.loginName" placeholder="登录名"></a-input>
           </a-form-item>
           <a-form-item>
             <a-button type="primary" @click="handleQuery({page:1,size:pagination.pageSize})">
@@ -17,12 +17,11 @@
           <a-form-item>
             <!-- 添加新增按钮 start-->
             <a-button type="primary" @click="add()">
-              新增图书
+              新增用户
             </a-button>
           </a-form-item>
-
         </a-form>
-        <!-- 添加根据名称查询电子书功能 end-->
+        <!-- 添加根据名称查询用户功能 end-->
 
 
       </p>
@@ -30,30 +29,16 @@
       <a-table
           :columns="columns"
           :row-key="record => record.id"
-          :data-source="ebooks"
+          :data-source="users"
           :pagination="pagination"
           :loading="loading"
           @change="handleTableChange"
       >
-        <!-- 电子书封面 -->
-        <template #cover="{text: cover}">
-          <img v-if="cover" :src="cover" alt="avatar">
-        </template>
-        <!-- 级联分类 -->
-        <template v-slot:category="{text,record}">
-          <span>{{ getCategoryName(record.category1Id) }}/{{ getCategoryName(record.category2Id) }}</span>
-        </template>
 
         <!-- 编辑按钮       -->
         <template v-slot:action="{text, record}">
           <!-- 空格组件 -->
           <a-space size="small">
-            <!-- 在路由中，传递电子书 id -->
-            <router-link :to="'/admin/doc?ebookId=' + record.id">
-              <a-button type="primary">
-                文档管理
-              </a-button>
-            </router-link>
             <a-button type="primary" @click="edit(record)">
               编辑
             </a-button>
@@ -76,25 +61,19 @@
   <!--对话框-->
   <a-modal
       v-model:visible="modelVisible"
-      title="电子书表单"
+      title="用户表单"
       :loading="modelLoading"
       @ok="handleModelOk">
     <!-- 表单 -->
-    <a-form :model="ebook" :label-col="{span:6}" :wrapper-col="wrapperCol">
-      <a-form-item label="封面">
-        <a-input v-model:value="ebook.cover"/>
+    <a-form :model="user" :label-col="{span:6}" :wrapper-col="wrapperCol">
+      <a-form-item label="用户名">
+        <a-input v-model:value="user.loginName"/>
       </a-form-item>
-      <a-form-item label="名称">
-        <a-input v-model:value="ebook.name"/>
+      <a-form-item label="昵称">
+        <a-input v-model:value="user.name"/>
       </a-form-item>
-      <a-form-item label="分类">
-        <a-cascader
-            v-model:value="categoryIds"
-            :field-names="{ label:'name',value:'id',children:'children'}"
-            :options="level1"/>
-      </a-form-item>
-      <a-form-item label="描述">
-        <a-input v-model:value="ebook.description" type="text"/>
+      <a-form-item label="密码">
+        <a-input v-model:value="user.password"/>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -108,17 +87,15 @@ import message from 'ant-design-vue'
 import {Tool} from '@/util/tool'
 
 export default defineComponent({
-  name: "Admin-eBook",
+  name: "Admin-User",
   setup() {
-    // 查询电子书参数：param
+    // 查询用户参数：param
     const param = ref();
     param.value = {};
-    /*
-* 数组：[100, 101] 对应：前端开发/Vue
-* */
+
     const categoryIds = ref();
 
-    const ebooks = ref();
+    const users = ref();
     const pagination = ref({
       current: 1,
       pageSize: 10,
@@ -127,28 +104,18 @@ export default defineComponent({
     const loading = ref(false);
     const columns = [
       {
-        title: '封面',
-        dataIndex: 'cover',
-        slots: {customRender: 'cover'}
+        title: '用户名',
+        dataIndex: 'loginName'
       },
       {
-        title: '名称',
+        title: '昵称',
         dataIndex: 'name'
       },
       {
-        title: '分类',
-        slots: {customRender: 'category'}
+        title: '密码',
+        dataIndex: 'password'
       },
       {
-        title: '文档数',
-        dataIndex: 'docCount'
-      }, {
-        title: '阅读数',
-        dataIndex: 'viewCount'
-      }, {
-        title: '点赞数',
-        dataIndex: 'voteCount'
-      }, {
         title: '管理',
         key: 'action',
         slots: {
@@ -160,68 +127,26 @@ export default defineComponent({
     const level1 = ref();
     let categorys: any;
 
-    /*
-    * 分类数据查询
-    * */
-    const handleQueryCategory = () => {
-      // 当加载数据时，打开 loading 状态
-      loading.value = true;
-      axios.get("/category/all").then((res) => {
-        // 当有返回值时，关闭 loading 状态
-        loading.value = false;
-        // 获取返回值数据
-        const data = res.data;
-        // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
-        if (data.success) {
-          categorys = data.content;
-          level1.value = [];
-          level1.value = Tool.array2Tree(categorys, 0);
-        } else {
-          // message.info(data.message);
-        }
-      });
-    };
-
-    const getCategoryName = (cid: number) => {
-      let result = "";
-      if (!Tool.isEmpty(categorys)) {
-        categorys.forEach((item: any) => {
-          if (item.id === cid) {
-            result = item.name;
-          }
-        });
-      }
-
-      return result;
-    }
-
-    /*
-    * 数据查询
-    * */
+    // 数据查询
     const handleQuery = (params: any) => {
-      // 当加载数据时，打开 loading 状态
+      console.log("params:")
+      console.log(param.value.loginName)
       loading.value = true;
-      axios.get("/ebook/list", {
-        // axios 拼接请求参数，参数为分页信息
+      axios.get("/user/all", {
         params: {
           page: params.page,
           size: params.size,
-          name: param.value.name
+          loginName: param.value.loginName
         }
       }).then((res) => {
-        // 当有返回值时，关闭 loading 状态
         loading.value = false;
-        // 获取返回值数据
         const data = res.data;
-        // 如果正常响应状态成功，获取响应数据内的数据，否则，提示错误
         if (data.success) {
 
-          ebooks.value = data.content.list;
-          // 重置分页按钮
+          users.value = data.content.list;
           pagination.value.current = params.page;
           pagination.value.total = data.content.total;
 
-          // 重置 查询参数
           param.value = {};
         } else {
           // 通过 ant 组件，提示错误信息
@@ -230,37 +155,20 @@ export default defineComponent({
       });
     };
 
-    /**
-     * 点击表格页码时触发
-     * @param pagination
-     */
+
     const handleTableChange = (pagination: any) => {
-      console.log("分页参数: " + pagination);
       handleQuery({
         page: pagination.current,
         size: pagination.pageSize
       });
     };
-    /**
-     * 表单
-     * */
-
-
-
-        // 模态框是否可见
     const modelVisible = ref(false);
-    // 模态框是否处于加载状态
     const modelLoading = ref(false);
-    // 电子书
-    const ebook: any = ref({})
+    const user: any = ref({})
 
     const handleModelOk = () => {
       modelLoading.value = true;
-      // 准备 级联 数据
-
-      ebook.value.category1Id = categoryIds.value[0];
-      ebook.value.category2Id = categoryIds.value[1];
-      axios.post("/ebook/save", ebook.value).then((res) => {
+      axios.post("/user/save", user.value).then((res) => {
 
         modelLoading.value = false;
         const data = res.data; // data = commonResp 在这里用以判断是否有值
@@ -285,23 +193,23 @@ export default defineComponent({
      */
     const edit = (record: any) => {
       modelVisible.value = true;
-      ebook.value = Tool.copy(record);
+      user.value = Tool.copy(record);
       // 准备 级联 数据
-      categoryIds.value = [ebook.value.category1Id, ebook.value.category2Id];
+      categoryIds.value = [user.value.category1Id, user.value.category2Id];
     }
     /**
      * 保存
      */
     const add = () => {
       modelVisible.value = true;
-      ebook.value = {}
+      user.value = {}
     }
 
     /**
      * 删除
      */
     const handleDelete = (id: any) => {
-      axios.delete("/ebook/delete/" + id).then((res) => {
+      axios.delete("/user/delete/" + id).then((res) => {
         const data = res.data;
         if (data.success) {
           // 重新加载列表
@@ -315,8 +223,6 @@ export default defineComponent({
 
 
     onMounted(() => {
-      // 调用获取分类数据方法
-      handleQueryCategory();
       handleQuery({
         page: 1,
         size: pagination.value.pageSize
@@ -324,7 +230,7 @@ export default defineComponent({
     });
 
     return {
-      ebooks,
+      users,
       pagination,
       columns,
       loading,
@@ -333,16 +239,15 @@ export default defineComponent({
       modelVisible,
       edit,
       add,
-      ebook,
+      user,
       handleModelOk,
       handleDelete,
-      // 电子书查询数据
+      // 用户查询数据
       param,
       // 查询方法
       handleQuery,
       categoryIds,
-      level1,
-      getCategoryName
+      level1
     }
 
   }

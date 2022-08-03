@@ -1,7 +1,9 @@
 package com.jiawa.wiki.service;
 
+import com.jiawa.wiki.domain.Content;
 import com.jiawa.wiki.domain.Doc;
 import com.jiawa.wiki.domain.DocExample;
+import com.jiawa.wiki.mapper.ContentMapper;
 import com.jiawa.wiki.mapper.DocMapper;
 import com.jiawa.wiki.req.DocQueryReq;
 import com.jiawa.wiki.resp.DocResp;
@@ -17,7 +19,10 @@ import java.util.List;
 public class DocService {
 
     @Resource
-    private DocMapper DocMapper;
+    private DocMapper docMapper;
+
+    @Resource
+    private ContentMapper contentMapper;
 
     @Resource
     private SnowFlake snowFlake;
@@ -25,38 +30,51 @@ public class DocService {
     public List<DocResp> all() {
         DocExample DocExample = new DocExample();
         DocExample.setOrderByClause("sort asc");
-        List<Doc> DocList = DocMapper.selectByExample(DocExample);
+        List<Doc> DocList = docMapper.selectByExample(DocExample);
         List<DocResp> list = CopyUtil.copyList(DocList, DocResp.class);
         return list;
     }
 
+    public DocResp all(Long id) {
+        DocExample DocExample = new DocExample();
+        Doc doc = docMapper.selectByPrimaryKey(id);
+        DocResp docResp = CopyUtil.copy(doc, DocResp.class);
+        return docResp;
+    }
+
     public void saveOrUpdate(DocQueryReq req) {
         Doc doc = CopyUtil.copy(req, Doc.class);
+        Content content = CopyUtil.copy(req, Content.class);
         if (ObjectUtils.isEmpty(req.getId())) {
-            System.out.println("save: doc.id = " + doc.getId());
-
             doc.setId(snowFlake.nextId());
-            DocMapper.insert(doc);
+            docMapper.insert(doc);
+
+            content.setId(doc.getId()); // 确保 content 的 id 与 doc 的 id 一致
+            contentMapper.insert(content);
         } else {
-            System.out.println("update: doc.id = " + doc.getId());
-            DocMapper.updateByPrimaryKey(doc);
+            docMapper.updateByPrimaryKey(doc);
+            int i = contentMapper.updateByPrimaryKeyWithBLOBs(content);// withBLOBS 有关于操作大字段的
+            if (i == 0) {
+                contentMapper.insert(content);
+            }
         }
     }
 
     public void delete(Long id) {
-        DocMapper.deleteByPrimaryKey(id);
+        docMapper.deleteByPrimaryKey(id);
     }
 
-    /**
-     * 批量删除 文档
-     *
-     * @param ids
-     */
+    // 批量删除文档
     public void delete(List<String> ids) {
         DocExample docExample = new DocExample();
         DocExample.Criteria criteria = docExample.createCriteria();
         criteria.andIdIn(ids);
-        DocMapper.deleteByExample(docExample);
+        docMapper.deleteByExample(docExample);
+    }
+
+    public String finContent(Long id) {
+        Content content = contentMapper.selectByPrimaryKey(id);
+        return content.getContent();
     }
 
 
